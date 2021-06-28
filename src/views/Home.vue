@@ -1,32 +1,42 @@
 <template>
   <div class="home">
-    <KTable
-      :columns="columns"
-      :dataSource="dataSource"
-      rowKey="id"
-			:scroll="{ x: 500, y: 330 }"
-    >
-      <template v-slot:sn="slotProps">
-        <span>
-          流水号: {{slotProps.row.sn}}
-        </span>
-      </template>
-    </KTable>
+    <a-spin :spinning="spinning">
+      <KTable
+        :columns="columns"
+        :data-source="dataSource"
+        rowKey="id"
+        :scroll="{ x: 400, y: 330 }"
+        :row-selection="{
+          onChange: selectChange,
+        }"
+        @sortChange="handleChange"
+      >
+        <template v-slot:sn="slotProps">
+          <span> 流水号: {{ slotProps.row.sn }} </span>
+        </template>
+        <template #action>
+          <span>
+            <a>Invite</a>
+          </span>
+        </template>
+      </KTable>
 
-    <a-pagination
-      v-model:current="current"
-      :total="total"
-      show-less-items
-      @change="changePage"
-    />
+      <a-pagination
+        v-model:current="current"
+        v-model:pageSize="pageSize"
+        :total="totalCount"
+        @change="changePage"
+      />
+    </a-spin>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref } from "vue";
+import { defineComponent, onMounted, reactive, ref } from "vue";
 import KTable from "@/components/Table/index.vue";
+import { ColumnPropsI } from "@/type/index";
 
-const columns = [
+const columns: ColumnPropsI[] = [
   {
     title: "流水号",
     width: 200,
@@ -71,6 +81,7 @@ const columns = [
   {
     title: "操作",
     key: "action",
+    slots: { customRender: "action" },
   },
 ];
 
@@ -84,26 +95,75 @@ const dataObj = {
   summaryOfResults: "成功",
   endTime: "2021-06-25 15:48",
 };
+
 export default defineComponent({
   name: "Home",
   components: {
     KTable,
   },
   setup() {
+    const nowPage = ref(0);
+
     const current = ref(1);
+
     const totalCount = ref(0);
 
-    const changePage = (page: number, pageSize: number) => {};
+    const pageSize = ref(20);
+
+    const spinning = ref(false);
+
+    const search = reactive({});
 
     const dataSource: any[] = reactive([]);
 
+    const data: any[] = reactive([]);
+
     for (let i = 0; i < 1000; i++) {
-      dataSource.push(dataObj);
+      data.push({ ...dataObj, id: i + 1, sn: "sn" + i });
     }
 
-    const handle = (slot: any) => {
-      console.log("slot", slot);
-      console.log(slot.row.id);
+    totalCount.value = data.length;
+
+    onMounted(() => {
+      changePage(1);
+    });
+
+    const changePage = (page: number) => {
+      spinning.value = true;
+
+      nowPage.value = page;
+
+      fetchData({ page });
+    };
+
+    const selectChange = (selectedRowKeys: string[] | number[]) => {
+      console.log("selectedRowKeys", selectedRowKeys);
+    };
+
+    const handleChange = (sorter: any) => {
+      console.log("sorter2222222222222", sorter);
+      const { key, rule } = sorter;
+      spinning.value = true;
+
+      changePage(nowPage.value);
+    };
+
+    const fetchData = (param: any) => {
+      const { page } = param;
+      dataSource.length = 0;
+
+      const filter = data.slice(
+        (page - 1) * pageSize.value,
+        page * pageSize.value
+      );
+
+      filter.forEach((item) => {
+        dataSource.push(item);
+      });
+
+      setTimeout(() => {
+        spinning.value = false;
+      }, 500);
     };
 
     return {
@@ -111,8 +171,11 @@ export default defineComponent({
       current,
       totalCount,
       dataSource,
+      pageSize,
+      spinning,
       changePage,
-      handle,
+      selectChange,
+      handleChange,
     };
   },
 });
