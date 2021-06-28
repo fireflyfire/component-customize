@@ -1,8 +1,105 @@
 <template>
   <div
     class="table-box"
-    :style="{ ...widthC, ...heightC }"
+    :style="{ ...widthC,...heightC}"
   >
+    <!-- <div class="table-head">
+      <table class="table">
+        <colgroup :span=" columnsC.length+1" style="width:120px"></colgroup>
+        <thead>
+          <tr>
+            <th v-if="rowSelectionC">
+              <span :class="[
+                { 'checkbox-active': selectNum > 0 },
+                { 'checkbox-all': selectNum === countC },
+                ]">
+                <input
+                  type="checkbox"
+                  class="checkbox"
+                  id="checkboxAll"
+                  v-model="selectAll"
+                  @change="checkboxAllHandle"
+                />
+                <label for="checkboxAll"></label>
+              </span>
+            </th>
+            <th
+              v-for="item in columnsC"
+              :key="item.key"
+            >
+              <div
+                class="flex"
+                @click="sorterHandle(item)"
+              >
+                <slot
+                  :name="item.slots.title"
+                  v-if="item.slots && item.slots.title"
+                ></slot>
+
+                <span v-else>{{ item.title }}</span>
+
+                <span
+                  class="sorter"
+                  v-if="item.sorter"
+                >
+                  <CaretUpOutlined :class="[{'sorter-asc': sorterRules[item.key] === 'asc'}]" />
+                  <CaretDownOutlined :class="[{'sorter-desc': sorterRules[item.key] === 'desc'}]" />
+                </span>
+              </div>
+            </th>
+          </tr>
+        </thead>
+      </table>
+    </div>
+    <div
+      class="table-body"
+      :style="{...heightC }"
+    >
+      <table class="table">
+        <colgroup :span=" columnsC.length+1" style="width:120px"></colgroup>
+        <tbody>
+          <tr
+            v-for="(item,index) in dataSourceC"
+            :key="item[rowKeyC]"
+          >
+            <td v-if="rowSelectionC">
+              <span>
+                <input
+                  type="checkbox"
+                  class="checkbox"
+                  :checked="checkboxArr[index]"
+                  :data-index="index"
+                  :data-row-key="item[rowKeyC]"
+                  :id="'checkbox'+item[rowKeyC]"
+                  @change="checkboxHandle"
+                />
+                <label :for="'checkbox'+item[rowKeyC]"></label>
+              </span>
+            </td>
+            <td
+              v-for="it in columnsC"
+              :key="it.key"
+            >
+              <slot
+                v-if="it.slots && it.slots.customRender"
+                :name="it.slots.customRender"
+                :row="item"
+              >
+              </slot>
+              <span v-else>{{ item[it.dataIndex] }}</span>
+            </td>
+          </tr>
+          <tr v-if="!dataSourceC">
+            <td :colspan="columnsC.length">
+              <div class="empty">
+                <span>No Data</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div> -->
+   
     <table class="table">
       <thead>
         <tr>
@@ -47,7 +144,7 @@
           </th>
         </tr>
       </thead>
-      <tbody>
+      <tbody :style="{...heightC}">
         <tr
           v-for="(item,index) in dataSourceC"
           :key="item[rowKeyC]"
@@ -89,6 +186,7 @@
         </tr>
       </tbody>
     </table>
+
   </div>
 </template>
 
@@ -309,6 +407,13 @@ export default defineComponent({
   width: 100%;
   margin: 20px auto;
 }
+.table-head {
+  width: 100%;
+  padding-right: 17px;
+}
+.table-body {
+  width: 100%;
+}
 .table {
   width: 100%;
   height: 100%;
@@ -322,12 +427,19 @@ export default defineComponent({
   word-break: break-all;
   border-collapse: collapse;
   border-spacing: 0;
+  // thead tr,
+  // tbody tr,
+  // tfoot tr {
+  //   box-sizing: border-box;
+  //   table-layout: fixed;
+  //   display: table;
+  //   width: 100%;
+  // }
 
   thead {
     tr {
       th {
         color: rgba(0, 0, 0, 0.85);
-        font-weight: 500;
         text-align: center;
         background: #fafafa;
         border-bottom: 1px solid #f0f0f0;
@@ -343,12 +455,12 @@ export default defineComponent({
     tr {
       td {
         padding: 12px 8px;
-        overflow-wrap: break-word;
         border-bottom: 1px solid #f0f0f0;
         line-height: 1.5715;
         width: 50px;
-        max-width: 180px;
+        // max-width: 180px;
         height: 50px;
+        overflow-wrap: break-word;
         box-sizing: border-box;
       }
       &:hover {
