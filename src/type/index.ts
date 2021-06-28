@@ -1,21 +1,24 @@
 export interface RowSelectionI {
-    fixed: boolean | undefined;
-    // onChange?: (
-    //     selectedRowKeys: string[] | number[],
-    //     selectedRows: Object[]
-    // ) => any;
+    fixed?: boolean;
+    onChange?: (
+        selectedRowKeys: string[] | number[],
+        // selectedRows: Object[]
+    ) => any;
 }
 export interface ColumnPropsI {
-    title: string | undefined;
-    dataIndex: string | undefined;
-    key: string | number | undefined;
-    width: number | undefined;
-    sorter: boolean | undefined;
-    slots: { customRender: string } | undefined
+    title: string;
+    key: string | number;
+    dataIndex?: string;
+    width?: number;
+    sorter?: boolean;
+    slots?: {
+        title?: string;
+        customRender?: string;
+    };
 }
 
 export interface TablePropsI {
-    dataSource: any[] | undefined;
-    columns: ColumnPropsI[] | undefined;
+    dataSource: any[];
+    columns: ColumnPropsI[];
     rowKey: string;
 }
