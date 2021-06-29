@@ -5,8 +5,9 @@
         :columns="columns"
         :data-source="dataSource"
         rowKey="id"
-        :scroll="{ x: 400, y: 330 }"
+        :scroll="{ x: 700, y: 330 }"
         :row-selection="{
+          fixed: true,
           onChange: selectChange,
         }"
         @sortChange="handleChange"
@@ -34,9 +35,8 @@
 <script lang="ts">
 import { defineComponent, onMounted, reactive, ref } from "vue";
 import KTable from "@/components/Table/index.vue";
-import { ColumnPropsI } from "@/type/index";
 
-const columns: ColumnPropsI[] = [
+const columns = [
   {
     title: "流水号",
     width: 200,
@@ -44,6 +44,7 @@ const columns: ColumnPropsI[] = [
     key: "sn",
     sorter: true,
     slots: { customRender: "sn" },
+    fixed: "left",
   },
   {
     title: "样本号",
@@ -82,6 +83,7 @@ const columns: ColumnPropsI[] = [
     title: "操作",
     key: "action",
     slots: { customRender: "action" },
+    // fixed: "right",
   },
 ];
 
@@ -108,7 +110,7 @@ export default defineComponent({
 
     const totalCount = ref(0);
 
-    const pageSize = ref(20);
+    const pageSize = ref(10);
 
     const spinning = ref(false);
 
@@ -118,7 +120,7 @@ export default defineComponent({
 
     const data: any[] = reactive([]);
 
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 50; i++) {
       data.push({ ...dataObj, id: i + 1, sn: "sn" + i });
     }
 
