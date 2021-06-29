@@ -1,110 +1,17 @@
 <template>
   <div
     class="table-box"
-    :style="{ ...widthC,...heightC}"
+    :style="tableBoxC"
   >
-    <!-- <div class="table-head">
-      <table class="table">
-        <colgroup :span=" columnsC.length+1" style="width:120px"></colgroup>
-        <thead>
-          <tr>
-            <th v-if="rowSelectionC">
-              <span :class="[
-                { 'checkbox-active': selectNum > 0 },
-                { 'checkbox-all': selectNum === countC },
-                ]">
-                <input
-                  type="checkbox"
-                  class="checkbox"
-                  id="checkboxAll"
-                  v-model="selectAll"
-                  @change="checkboxAllHandle"
-                />
-                <label for="checkboxAll"></label>
-              </span>
-            </th>
-            <th
-              v-for="item in columnsC"
-              :key="item.key"
-            >
-              <div
-                class="flex"
-                @click="sorterHandle(item)"
-              >
-                <slot
-                  :name="item.slots.title"
-                  v-if="item.slots && item.slots.title"
-                ></slot>
-
-                <span v-else>{{ item.title }}</span>
-
-                <span
-                  class="sorter"
-                  v-if="item.sorter"
-                >
-                  <CaretUpOutlined :class="[{'sorter-asc': sorterRules[item.key] === 'asc'}]" />
-                  <CaretDownOutlined :class="[{'sorter-desc': sorterRules[item.key] === 'desc'}]" />
-                </span>
-              </div>
-            </th>
-          </tr>
-        </thead>
-      </table>
-    </div>
-    <div
-      class="table-body"
-      :style="{...heightC }"
-    >
-      <table class="table">
-        <colgroup :span=" columnsC.length+1" style="width:120px"></colgroup>
-        <tbody>
-          <tr
-            v-for="(item,index) in dataSourceC"
-            :key="item[rowKeyC]"
-          >
-            <td v-if="rowSelectionC">
-              <span>
-                <input
-                  type="checkbox"
-                  class="checkbox"
-                  :checked="checkboxArr[index]"
-                  :data-index="index"
-                  :data-row-key="item[rowKeyC]"
-                  :id="'checkbox'+item[rowKeyC]"
-                  @change="checkboxHandle"
-                />
-                <label :for="'checkbox'+item[rowKeyC]"></label>
-              </span>
-            </td>
-            <td
-              v-for="it in columnsC"
-              :key="it.key"
-            >
-              <slot
-                v-if="it.slots && it.slots.customRender"
-                :name="it.slots.customRender"
-                :row="item"
-              >
-              </slot>
-              <span v-else>{{ item[it.dataIndex] }}</span>
-            </td>
-          </tr>
-          <tr v-if="!dataSourceC">
-            <td :colspan="columnsC.length">
-              <div class="empty">
-                <span>No Data</span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div> -->
-   
     <table class="table">
       <thead>
         <tr>
-          <th v-if="rowSelectionC">
+          <th
+            v-if="rowSelectionC"
+            :class="[{'checkbox-fix-all': rowSelectionC.fixed}]"
+          >
             <span :class="[
+                { 'flex': true },
                 { 'checkbox-active': selectNum > 0 },
                 { 'checkbox-all': selectNum === countC },
                 ]">
@@ -119,8 +26,10 @@
             </span>
           </th>
           <th
-            v-for="item in columnsC"
+            v-for="(item) in columnsC"
             :key="item.key"
+            :class="[{'td-fix':item.fixed}]"
+            :style="fixedC[item.key]"
           >
             <div
               class="flex"
@@ -144,12 +53,15 @@
           </th>
         </tr>
       </thead>
-      <tbody :style="{...heightC}">
+      <tbody>
         <tr
           v-for="(item,index) in dataSourceC"
           :key="item[rowKeyC]"
         >
-          <td v-if="rowSelectionC">
+          <td
+            v-if="rowSelectionC"
+            :class="[{'checkbox-fix': rowSelectionC.fixed}]"
+          >
             <span>
               <input
                 type="checkbox"
@@ -160,13 +72,13 @@
                 :id="'checkbox'+item[rowKeyC]"
                 @change="checkboxHandle"
               />
-              <label :for="'checkbox'+item[rowKeyC]"></label>
             </span>
           </td>
           <td
             v-for="it in columnsC"
             :key="it.key"
-            :width="it.width"
+            :class="[{'td-fix':it.fixed}]"
+            :style="fixedC[it.key]"
           >
             <slot
               v-if="it.slots && it.slots.customRender"
@@ -201,7 +113,7 @@ import {
   watch,
 } from "vue";
 import { CaretUpOutlined, CaretDownOutlined } from "@ant-design/icons-vue";
-import { RowSelectionI } from "@/type/index";
+import { RowSelectionI, ColumnPropsI } from "./type/index";
 
 export default defineComponent({
   props: {
@@ -210,8 +122,8 @@ export default defineComponent({
       default: undefined,
     },
     columns: {
-      type: Array,
-      default: undefined,
+      type: Array as PropType<ColumnPropsI[]>,
+      default: () => [],
     },
     rowKey: {
       type: String,
@@ -225,7 +137,9 @@ export default defineComponent({
     },
     rowSelection: {
       type: Object as PropType<RowSelectionI>,
-      default: () => {},
+      default: () => {
+        return {};
+      },
     },
   },
   components: {
@@ -270,24 +184,42 @@ export default defineComponent({
       return props.rowSelection;
     });
 
-    const widthC = computed(() => {
-      const res = props.scroll.x
-        ? {
-            width: props.scroll.x + "px",
-            overflowX: "scroll",
-          }
-        : {};
+    const tableBoxC = computed(() => {
+      const { x, y } = props.scroll;
+      let res = "";
+      x && (res += `max-width: ${props.scroll.x}px;overflow-x:scroll;`);
+      y && (res += `max-height: ${props.scroll.y}px;overflow-y:scroll;`);
+
       return res;
     });
 
-    const heightC = computed(() => {
-      const res = props.scroll.y
-        ? {
-            height: props.scroll.y + "px",
-            overflowY: "scroll",
-          }
-        : {};
-      return res;
+    const fixedC = computed(() => {
+      const vpx = window.innerWidth / 1024;
+      const columns = props.columns;
+      let leftWidth = rowSelectionC.value.fixed ? 50 * vpx : 0;
+      let rightWidth = 0;
+      const zIndex = 5;
+      const result: any = {};
+      columns.forEach((item: any) => {
+        result[item.key] = "";
+
+        if (item.fixed === "left") {
+          const left = leftWidth;
+          leftWidth += item.width ? item.width : 120 * vpx;
+          result[
+            item.key
+          ] = `width:${item.width}px;left:${left}px;z-index:${zIndex}`;
+        }
+
+        if (item.fixed === "right") {
+          const right = rightWidth;
+          rightWidth += item.width ? item.width : 120 * vpx;
+          result[
+            item.key
+          ] = `width:${item.width}px;right:${right}px;z-index:${zIndex}`;
+        }
+      });
+      return result;
     });
 
     watch(props, (newVal, oldVal) => {
@@ -347,6 +279,8 @@ export default defineComponent({
       if (checked) {
         selectNum.value = checkboxArr.length;
 
+        selectedRowKeys.length = 0;
+
         dataSourceC?.forEach((item: any) => {
           selectedRowKeys.push(item[rowKeyC.value]);
         });
@@ -386,8 +320,8 @@ export default defineComponent({
       columnsC,
       rowKeyC,
       rowSelectionC,
-      widthC,
-      heightC,
+      tableBoxC,
+      fixedC,
       checkboxArr,
       sorterRules,
       checkboxAll,
@@ -400,68 +334,66 @@ export default defineComponent({
 </script>
 
 <style lang="less" scoped>
-// @onepxTovw: 100vw/1024;
+@onepxTovw: 100vw/1024;
+
 @primary-color: #005bac;
+
+.flex {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
 .table-box {
   width: 100%;
-  margin: 20px auto;
+  margin: 20 * @onepxTovw auto;
 }
-.table-head {
-  width: 100%;
-  padding-right: 17px;
-}
-.table-body {
-  width: 100%;
-}
+
 .table {
   width: 100%;
   height: 100%;
   border: 1px solid #dcdfe6;
   background-color: #fff;
   color: rgba(0, 0, 0, 0.85);
-  font-size: 14px;
+  font-size: 14 * @onepxTovw;
   text-align: center;
-  white-space: nowrap;
-  word-wrap: break-word;
-  word-break: break-all;
   border-collapse: collapse;
   border-spacing: 0;
-  // thead tr,
-  // tbody tr,
-  // tfoot tr {
-  //   box-sizing: border-box;
-  //   table-layout: fixed;
-  //   display: table;
-  //   width: 100%;
-  // }
+  table-layout: fixed;
 
   thead {
+    position: relative;
+    z-index: 10;
     tr {
       th {
         color: rgba(0, 0, 0, 0.85);
         text-align: center;
         background: #fafafa;
         border-bottom: 1px solid #f0f0f0;
-        padding: 16px 16px;
+        padding: 12 * @onepxTovw 8 * @onepxTovw;
         overflow-wrap: break-word;
         font-weight: bold;
         line-height: 1.5715;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        width: 120 * @onepxTovw;
       }
     }
   }
 
   tbody {
     tr {
+      height: 50 * @onepxTovw;
       td {
-        padding: 12px 8px;
+        padding: 12 * @onepxTovw 8 * @onepxTovw;
         border-bottom: 1px solid #f0f0f0;
         line-height: 1.5715;
-        width: 50px;
-        // max-width: 180px;
-        height: 50px;
+        min-height: 50 * @onepxTovw;
         overflow-wrap: break-word;
         box-sizing: border-box;
+        width: 120 * @onepxTovw;
+        background: #fff;
       }
       &:hover {
         td {
@@ -470,83 +402,101 @@ export default defineComponent({
       }
     }
   }
+
   .empty {
     width: 100%;
-    height: 200px;
+    height: 200 * @onepxTovw;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
     color: #999;
   }
+
   .checkbox {
-    display: none;
-  }
-  .checkbox + label {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border-radius: 5px;
-    border: 1px solid #999;
-    background: #fff;
-    position: relative;
+    width: 20 * @onepxTovw;
+    height: 20 * @onepxTovw;
     cursor: pointer;
-    &::before {
-      display: inline-block;
-      content: " ";
-      width: 12px;
-      border: 2px solid #fff;
-      height: 4px;
-      border-top: none;
-      border-right: none;
-      transform: rotate(-45deg);
-      top: 5px;
-      left: 3px;
-      position: absolute;
-      opacity: 0;
-    }
   }
-
-  .checkbox:checked + label {
-    background-color: @primary-color;
-  }
-  .checkbox:checked + label::before {
-    opacity: 1;
-    transform: all 0.5s;
-  }
-
   .checkbox-active {
-    display: inline-block;
     position: relative;
-    width: 20px;
-    height: 20px;
-    label::after {
-      content: "";
+    display: flex;
+    label {
       position: absolute;
       top: 50%;
       left: 50%;
       display: inline-block;
-      width: 10px;
-      height: 10px;
+      width: 10 * @onepxTovw;
+      height: 10 * @onepxTovw;
       border-radius: 1px;
       transform: translateX(-50%) translateY(-50%);
       background-color: @primary-color;
       z-index: 0;
     }
   }
+
   .checkbox-all {
-    label::after {
+    label {
       display: none;
     }
   }
+
+  .checkbox-fix {
+    position: -webkit-sticky;
+    position: sticky;
+    left: 0;
+    background: #fff;
+    width: 50 * @onepxTovw;
+  }
+  .checkbox-fix-all {
+    position: -webkit-sticky;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    width: 50 * @onepxTovw;
+  }
+  .td-fix {
+    position: -webkit-sticky;
+    position: sticky;
+  }
+
+  .checkbox-fix,
+  .checkbox-fix-all,
+  .td-fix {
+    &::after {
+      content: "";
+      display: inline-block;
+      width: 1px;
+      height: 100%;
+      background: #f0f0f0;
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+
+    &:first-child,
+    &:last-child {
+      &::before {
+        content: "";
+        display: inline-block;
+        width: 1px;
+        height: 100%;
+        background: #f0f0f0;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    }
+  }
+
   .sorter {
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
     color: #999;
-    font-size: 14px;
-    margin-left: 10px;
+    font-size: 14 * @onepxTovw;
+    margin-left: 10 * @onepxTovw;
     transform: translateY(-10%);
     & > span:first-of-type {
       transform: translateY(30%);
@@ -555,11 +505,6 @@ export default defineComponent({
     &-desc {
       color: @primary-color;
     }
-  }
-  .flex {
-    display: flex;
-    justify-content: center;
-    align-items: center;
   }
 }
 </style>
