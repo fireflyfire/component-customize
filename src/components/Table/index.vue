@@ -20,7 +20,7 @@
                 class="checkbox"
                 id="checkboxAll"
                 v-model="selectAll"
-                @change="checkboxAllHandle"
+                @click="checkboxAllHandle"
               />
               <label for="checkboxAll"></label>
             </span>
@@ -69,8 +69,7 @@
                 :checked="checkboxArr[index]"
                 :data-index="index"
                 :data-row-key="item[rowKeyC]"
-                :id="'checkbox'+item[rowKeyC]"
-                @change="checkboxHandle"
+                @click="checkboxHandle"
               />
             </span>
           </td>
@@ -98,7 +97,6 @@
         </tr>
       </tbody>
     </table>
-
   </div>
 </template>
 
@@ -119,7 +117,7 @@ export default defineComponent({
   props: {
     dataSource: {
       type: Array,
-      default: undefined,
+      default: () => [],
     },
     columns: {
       type: Array as PropType<ColumnPropsI[]>,
@@ -153,13 +151,15 @@ export default defineComponent({
 
     const checkboxAll = ref("");
 
-    const dataSourceC: any[] = reactive([]);
-
     const checkboxArr: boolean[] = reactive([]);
 
     const selectedRowKeys: any[] = reactive([]);
 
     const sorterRules: Record<string, string> = reactive({});
+
+    const dataSourceC = computed(() => {
+      return props.dataSource;
+    });
 
     const countC = computed(() => {
       return props.dataSource?.length;
@@ -181,7 +181,15 @@ export default defineComponent({
     });
 
     const rowSelectionC: ComputedRef<RowSelectionI> = computed(() => {
-      return props.rowSelection;
+      const rowSelection = props.rowSelection;
+
+      // if (rowSelection.selectedRowKeys) {
+      //   rowSelection.selectedRowKeys.forEach((item) => {
+      //     selectedRowKeys.push(item);
+      //   });
+      // }
+
+      return rowSelection;
     });
 
     const tableBoxC = computed(() => {
@@ -222,21 +230,15 @@ export default defineComponent({
       return result;
     });
 
-    watch(props, (newVal, oldVal) => {
-      const { dataSource } = newVal;
-
+    watch(props.dataSource, (newVal, oldVal) => {
       selectNum.value = 0;
 
       selectedRowKeys.length = 0;
 
       checkboxArr.length = 0;
 
-      dataSourceC.length = 0;
-
-      dataSource?.forEach((item) => {
+      newVal?.forEach((item) => {
         checkboxArr.push(false);
-
-        dataSourceC.push(item);
       });
     });
 
@@ -254,7 +256,7 @@ export default defineComponent({
       if (index) {
         checkboxArr[Number(index)] = checked;
 
-        const item: any = dataSourceC && dataSourceC[Number(index)];
+        const item: any = dataSourceC.value && dataSourceC.value[Number(index)];
 
         const rowKeyIndex = selectedRowKeys.indexOf(item[rowKeyC.value]);
 
@@ -281,7 +283,7 @@ export default defineComponent({
 
         selectedRowKeys.length = 0;
 
-        dataSourceC?.forEach((item: any) => {
+        dataSourceC.value?.forEach((item: any) => {
           selectedRowKeys.push(item[rowKeyC.value]);
         });
       } else {

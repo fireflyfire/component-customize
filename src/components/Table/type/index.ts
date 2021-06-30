@@ -4,6 +4,7 @@ export interface RowSelectionI {
         selectedRowKeys: string[] | number[],
         // selectedRows: Object[]
     ) => any;
+    selectedRowKeys?: any[]
 }
 export interface ColumnPropsI {
     title: string;

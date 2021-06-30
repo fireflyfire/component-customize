@@ -158,10 +158,7 @@ export default defineComponent({
         (page - 1) * pageSize.value,
         page * pageSize.value
       );
-
-      filter.forEach((item) => {
-        dataSource.push(item);
-      });
+      dataSource.splice(0, 0, ...filter);
 
       setTimeout(() => {
         spinning.value = false;
