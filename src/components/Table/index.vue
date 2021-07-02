@@ -8,28 +8,28 @@
         <tr>
           <th
             v-if="rowSelectionC"
-            :class="[{'checkbox-fix-all': rowSelectionC.fixed}]"
+            :class="[{ 'checkbox-fix-all': rowSelectionC.fixed }]"
           >
             <span :class="[
-                { 'flex': true },
+                { flex: true },
                 { 'checkbox-active': selectNum > 0 },
                 { 'checkbox-all': selectNum === countC },
-                ]">
+              ]">
               <input
                 type="checkbox"
                 class="checkbox"
                 id="checkboxAll"
-                v-model="selectAll"
+                :checked="selectNum === countC"
                 @click="checkboxAllHandle"
               />
               <label for="checkboxAll"></label>
             </span>
           </th>
           <th
-            v-for="(item) in columnsC"
+            v-for="item in columnsC"
             :key="item.key"
-            :class="[{'td-fix':item.fixed}]"
-            :style="fixedC[item.key]"
+            :class="[{ 'td-fix': item.fixed }]"
+            :style="{ ...fixedC[item.key], width: item.width + 'px' }"
           >
             <div
               class="flex"
@@ -46,8 +46,20 @@
                 class="sorter"
                 v-if="item.sorter"
               >
-                <CaretUpOutlined :class="[{'sorter-asc': sorterRules[item.key] === 'asc'}]" />
-                <CaretDownOutlined :class="[{'sorter-desc': sorterRules[item.key] === 'desc'}]" />
+                <CaretUpOutlined :class="[
+                    {
+                      'sorter-asc':
+                        sorterActive.key === item.key &&
+                        sorterActive.rule === 'asc',
+                    },
+                  ]" />
+                <CaretDownOutlined :class="[
+                    {
+                      'sorter-desc':
+                        sorterActive.key === item.key &&
+                        sorterActive.rule === 'desc',
+                    },
+                  ]" />
               </span>
             </div>
           </th>
@@ -55,12 +67,12 @@
       </thead>
       <tbody>
         <tr
-          v-for="(item,index) in dataSourceC"
+          v-for="(item, index) in dataSourceC"
           :key="item[rowKeyC]"
         >
           <td
             v-if="rowSelectionC"
-            :class="[{'checkbox-fix': rowSelectionC.fixed}]"
+            :class="[{ 'checkbox-fix': rowSelectionC.fixed }]"
           >
             <span>
               <input
@@ -68,7 +80,6 @@
                 class="checkbox"
                 :checked="checkboxArr[index]"
                 :data-index="index"
-                :data-row-key="item[rowKeyC]"
                 @click="checkboxHandle"
               />
             </span>
@@ -76,8 +87,8 @@
           <td
             v-for="it in columnsC"
             :key="it.key"
-            :class="[{'td-fix':it.fixed}]"
-            :style="fixedC[it.key]"
+            :class="[{ 'td-fix': it.fixed }]"
+            :style="{ ...fixedC[it.key], width: item.width + 'px' }"
           >
             <slot
               v-if="it.slots && it.slots.customRender"
@@ -88,7 +99,7 @@
             <span v-else>{{ item[it.dataIndex] }}</span>
           </td>
         </tr>
-        <tr v-if="!dataSourceC">
+        <tr v-if="!dataSourceC || dataSourceC.length === 0">
           <td :colspan="columnsC.length">
             <div class="empty">
               <span>No Data</span>
@@ -147,15 +158,12 @@ export default defineComponent({
   setup(props, ctx) {
     const selectNum = ref(0);
 
-    const selectAll = ref(false);
-
-    const checkboxAll = ref("");
-
     const checkboxArr: boolean[] = reactive([]);
 
     const selectedRowKeys: any[] = reactive([]);
 
-    const sorterRules: Record<string, string> = reactive({});
+    const sorterActive: { key: string; rule: string } | Record<string, string> =
+      reactive({});
 
     const dataSourceC = computed(() => {
       return props.dataSource;
@@ -166,13 +174,6 @@ export default defineComponent({
     });
 
     const columnsC = computed(() => {
-      const sort =
-        props.columns && props.columns.filter((item: any) => item.sorter);
-
-      sort?.forEach((item: any) => {
-        sorterRules[item.key] = "";
-      });
-
       return props.columns;
     });
 
@@ -182,12 +183,6 @@ export default defineComponent({
 
     const rowSelectionC: ComputedRef<RowSelectionI> = computed(() => {
       const rowSelection = props.rowSelection;
-
-      // if (rowSelection.selectedRowKeys) {
-      //   rowSelection.selectedRowKeys.forEach((item) => {
-      //     selectedRowKeys.push(item);
-      //   });
-      // }
 
       return rowSelection;
     });
@@ -202,31 +197,37 @@ export default defineComponent({
     });
 
     const fixedC = computed(() => {
-      const vpx = window.innerWidth / 1024;
       const columns = props.columns;
-      let leftWidth = rowSelectionC.value.fixed ? 50 * vpx : 0;
+      let leftWidth = rowSelectionC.value.fixed ? 50 : 0;
       let rightWidth = 0;
       const zIndex = 5;
       const result: any = {};
-      columns.forEach((item: any) => {
-        result[item.key] = "";
 
-        if (item.fixed === "left") {
+      for (let i = 0; i < columns.length; i++) {
+        const length = columns.length;
+        const leftItem = columns[i];
+        const rightItem = columns[length - 1 - i];
+
+        if (leftItem.fixed === "left") {
           const left = leftWidth;
-          leftWidth += item.width ? item.width : 120 * vpx;
-          result[
-            item.key
-          ] = `width:${item.width}px;left:${left}px;z-index:${zIndex}`;
+          leftWidth += leftItem.width ? leftItem.width : 120;
+          result[leftItem.key] = {
+            width: `${leftItem.width}px`,
+            left: `${left}px`,
+            "z-index": `${zIndex}`,
+          };
         }
 
-        if (item.fixed === "right") {
+        if (rightItem.fixed === "right") {
           const right = rightWidth;
-          rightWidth += item.width ? item.width : 120 * vpx;
-          result[
-            item.key
-          ] = `width:${item.width}px;right:${right}px;z-index:${zIndex}`;
+          rightWidth += rightItem.width ? rightItem.width : 120;
+          result[rightItem.key] = {
+            width: `${rightItem.width}px`,
+            right: `${right}px`,
+            "z-index": `${zIndex}`,
+          };
         }
-      });
+      }
       return result;
     });
 
@@ -237,8 +238,22 @@ export default defineComponent({
 
       checkboxArr.length = 0;
 
-      newVal?.forEach((item) => {
-        checkboxArr.push(false);
+      const rowSelection = props.rowSelection;
+
+      if (rowSelection.selectedRowKeys) {
+        selectedRowKeys.splice(0, 0, ...rowSelection.selectedRowKeys);
+      }
+
+      newVal?.forEach((item: any) => {
+        const index = rowSelection.selectedRowKeys?.indexOf(
+          item[rowKeyC.value]
+        );
+        const checked = index !== undefined && index !== -1;
+
+        if (checked) {
+          selectNum.value++;
+        }
+        checkboxArr.push(checked);
       });
     });
 
@@ -252,7 +267,7 @@ export default defineComponent({
       } else {
         selectNum.value--;
       }
-      selectAll.value = selectNum.value === countC.value;
+
       if (index) {
         checkboxArr[Number(index)] = checked;
 
@@ -303,20 +318,21 @@ export default defineComponent({
 
       const sort = ["", "asc", "desc"];
 
-      const index = sort.indexOf(sorterRules[key]);
+      let index = sort.indexOf(sorterActive.rule);
 
-      for (const key in sorterRules) {
-        sorterRules[key] = "";
-      }
+      index = index === -1 ? 0 : index;
 
-      sorterRules[key] = sort[(index + 1) % 3];
+      index = sorterActive.key === key ? index : 0;
 
-      ctx.emit("sortChange", { sorter: { key, rule: sorterRules[key] } });
+      sorterActive.key = key;
+
+      sorterActive.rule = sort[(index + 1) % 3];
+
+      ctx.emit("sortChange", { sorter: sorterActive });
     };
 
     return {
       selectNum,
-      selectAll,
       countC,
       dataSourceC,
       columnsC,
@@ -325,8 +341,7 @@ export default defineComponent({
       tableBoxC,
       fixedC,
       checkboxArr,
-      sorterRules,
-      checkboxAll,
+      sorterActive,
       checkboxHandle,
       checkboxAllHandle,
       sorterHandle,
@@ -348,7 +363,7 @@ export default defineComponent({
 
 .table-box {
   width: 100%;
-  margin: 20 * @onepxTovw auto;
+  margin: 20px auto;
 }
 
 .table {
@@ -357,7 +372,7 @@ export default defineComponent({
   border: 1px solid #dcdfe6;
   background-color: #fff;
   color: rgba(0, 0, 0, 0.85);
-  font-size: 14 * @onepxTovw;
+  font-size: 14px;
   text-align: center;
   border-collapse: collapse;
   border-spacing: 0;
@@ -372,29 +387,29 @@ export default defineComponent({
         text-align: center;
         background: #fafafa;
         border-bottom: 1px solid #f0f0f0;
-        padding: 12 * @onepxTovw 8 * @onepxTovw;
+        padding: 12px 8px;
         overflow-wrap: break-word;
         font-weight: bold;
         line-height: 1.5715;
         position: sticky;
         top: 0;
         z-index: 2;
-        width: 120 * @onepxTovw;
+        width: 120px;
       }
     }
   }
 
   tbody {
     tr {
-      height: 50 * @onepxTovw;
+      height: 50px;
       td {
-        padding: 12 * @onepxTovw 8 * @onepxTovw;
+        padding: 12px 8px;
         border-bottom: 1px solid #f0f0f0;
         line-height: 1.5715;
-        min-height: 50 * @onepxTovw;
+        min-height: 50px;
         overflow-wrap: break-word;
         box-sizing: border-box;
-        width: 120 * @onepxTovw;
+        width: 120px;
         background: #fff;
       }
       &:hover {
@@ -407,7 +422,7 @@ export default defineComponent({
 
   .empty {
     width: 100%;
-    height: 200 * @onepxTovw;
+    height: 200px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -416,8 +431,8 @@ export default defineComponent({
   }
 
   .checkbox {
-    width: 20 * @onepxTovw;
-    height: 20 * @onepxTovw;
+    width: 20px;
+    height: 20px;
     cursor: pointer;
   }
   .checkbox-active {
@@ -428,8 +443,8 @@ export default defineComponent({
       top: 50%;
       left: 50%;
       display: inline-block;
-      width: 10 * @onepxTovw;
-      height: 10 * @onepxTovw;
+      width: 10px;
+      height: 10px;
       border-radius: 1px;
       transform: translateX(-50%) translateY(-50%);
       background-color: @primary-color;
@@ -448,14 +463,14 @@ export default defineComponent({
     position: sticky;
     left: 0;
     background: #fff;
-    width: 50 * @onepxTovw;
+    width: 50px;
   }
   .checkbox-fix-all {
     position: -webkit-sticky;
     position: sticky;
     left: 0;
     z-index: 10;
-    width: 50 * @onepxTovw;
+    width: 50px;
   }
   .td-fix {
     position: -webkit-sticky;
@@ -465,6 +480,17 @@ export default defineComponent({
   .checkbox-fix,
   .checkbox-fix-all,
   .td-fix {
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 1px;
+      height: 100%;
+      background: #f0f0f0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: scaleX(0.5);
+    }
     &::after {
       content: "";
       display: inline-block;
@@ -473,7 +499,8 @@ export default defineComponent({
       background: #f0f0f0;
       position: absolute;
       top: 0;
-      right: 0;
+      right: -1px;
+      transform: scaleX(0.5);
     }
 
     &:first-child,
@@ -481,7 +508,7 @@ export default defineComponent({
       &::before {
         content: "";
         display: inline-block;
-        width: 1px;
+        width: 2px;
         height: 100%;
         background: #f0f0f0;
         position: absolute;
@@ -497,8 +524,8 @@ export default defineComponent({
     align-items: center;
     flex-direction: column;
     color: #999;
-    font-size: 14 * @onepxTovw;
-    margin-left: 10 * @onepxTovw;
+    font-size: 14px;
+    margin-left: 10px;
     transform: translateY(-10%);
     & > span:first-of-type {
       transform: translateY(30%);
