@@ -10,10 +10,17 @@
           <tr>
             <th>
               <span class="flex">
-                <input class="checkbox" type="checkbox" :disabled="true" />
+                <input
+                  class="checkbox"
+                  type="checkbox"
+                  :disabled="true"
+                />
               </span>
             </th>
-            <th v-for="item in columnsC" :key="item.key">
+            <th
+              v-for="item in columnsC"
+              :key="item.key"
+            >
               <div class="flex">
                 <slot
                   :name="item.slots.title"
@@ -21,7 +28,10 @@
                 ></slot>
 
                 <span v-else>{{ item.title }}</span>
-                <span class="sorter" v-if="item.sorter">
+                <span
+                  class="sorter"
+                  v-if="item.sorter"
+                >
                   <CaretUpOutlined />
                   <CaretDownOutlined />
                 </span>
@@ -34,7 +44,11 @@
         <span>No Data</span>
       </div>
     </div>
-    <div class="table-box" :style="tableBoxC" v-else>
+    <div
+      class="table-box"
+      :style="tableBoxC"
+      v-else
+    >
       <table class="table">
         <thead>
           <tr>
@@ -42,13 +56,11 @@
               v-if="rowSelectionC"
               :class="[{ 'checkbox-fix-all': rowSelectionC.fixed }]"
             >
-              <span
-                :class="[
+              <span :class="[
                   { flex: true },
                   { 'checkbox-active': selectNum > 0 },
                   { 'checkbox-all': selectNum === countC },
-                ]"
-              >
+                ]">
                 <input
                   type="checkbox"
                   class="checkbox"
@@ -65,7 +77,10 @@
               :class="[{ 'td-fix': item.fixed }]"
               :style="{ ...fixedC[item.key], width: item.width + 'px' }"
             >
-              <div class="flex" @click="sorterHandle(item)">
+              <div
+                class="flex"
+                @click="sorterHandle(item)"
+              >
                 <slot
                   :name="item.slots.title"
                   v-if="item.slots && item.slots.title"
@@ -73,32 +88,34 @@
 
                 <span v-else>{{ item.title }}</span>
 
-                <span class="sorter" v-if="item.sorter">
-                  <CaretUpOutlined
-                    :class="[
+                <span
+                  class="sorter"
+                  v-if="item.sorter"
+                >
+                  <CaretUpOutlined :class="[
                       {
                         'sorter-asc':
                           sorterActive.key === item.key &&
                           sorterActive.rule === 'asc',
                       },
-                    ]"
-                  />
-                  <CaretDownOutlined
-                    :class="[
+                    ]" />
+                  <CaretDownOutlined :class="[
                       {
                         'sorter-desc':
                           sorterActive.key === item.key &&
                           sorterActive.rule === 'desc',
                       },
-                    ]"
-                  />
+                    ]" />
                 </span>
               </div>
             </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(item, index) in dataSourceC" :key="item[rowKeyC]">
+          <tr
+            v-for="(item, index) in dataSourceC"
+            :key="item[rowKeyC]"
+          >
             <td
               v-if="rowSelectionC"
               :class="[{ 'checkbox-fix': rowSelectionC.fixed }]"
@@ -159,7 +176,7 @@ export default defineComponent({
     },
     rowKey: {
       type: String,
-      default: "",
+      default: "key",
     },
     scroll: {
       type: Object,
@@ -169,9 +186,7 @@ export default defineComponent({
     },
     rowSelection: {
       type: Object as PropType<RowSelectionI>,
-      default: () => {
-        return {};
-      },
+      default: undefined,
     },
   },
   components: {
@@ -204,11 +219,13 @@ export default defineComponent({
       return props.rowKey;
     });
 
-    const rowSelectionC: ComputedRef<RowSelectionI> = computed(() => {
-      const rowSelection = props.rowSelection;
+    const rowSelectionC: ComputedRef<RowSelectionI | undefined> = computed(
+      () => {
+        const rowSelection = props.rowSelection;
 
-      return rowSelection;
-    });
+        return rowSelection;
+      }
+    );
 
     const tableBoxC = computed(() => {
       const { x, y } = props.scroll;
@@ -221,7 +238,7 @@ export default defineComponent({
 
     const fixedC = computed(() => {
       const columns = props.columns;
-      let leftWidth = rowSelectionC.value.fixed ? 50 : 0;
+      let leftWidth = rowSelectionC.value && rowSelectionC.value.fixed ? 50 : 0;
       let rightWidth = 0;
       const zIndex = 5;
       const result: any = {};
@@ -263,14 +280,14 @@ export default defineComponent({
 
       const rowSelection = props.rowSelection;
 
-      if (rowSelection.selectedRowKeys) {
+      if (rowSelection && rowSelection.selectedRowKeys) {
         selectedRowKeys.splice(0, 0, ...rowSelection.selectedRowKeys);
       }
 
       newVal?.forEach((item: any) => {
-        const index = rowSelection.selectedRowKeys?.indexOf(
-          item[rowKeyC.value]
-        );
+        const index =
+          rowSelection &&
+          rowSelection.selectedRowKeys?.indexOf(item[rowKeyC.value]);
         const checked = index !== undefined && index !== -1;
 
         if (checked) {
@@ -305,7 +322,7 @@ export default defineComponent({
         }
       }
 
-      if (rowSelectionC.value.onChange) {
+      if (rowSelectionC.value && rowSelectionC.value.onChange) {
         rowSelectionC.value.onChange(selectedRowKeys);
       }
     };
@@ -330,7 +347,7 @@ export default defineComponent({
         selectedRowKeys.length = 0;
       }
 
-      if (rowSelectionC.value.onChange) {
+      if (rowSelectionC.value && rowSelectionC.value.onChange) {
         rowSelectionC.value.onChange(selectedRowKeys);
       }
     };

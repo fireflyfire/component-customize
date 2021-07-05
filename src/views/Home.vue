@@ -25,7 +25,7 @@
 
       <a-pagination
         v-model:current="current"
-        v-model:pageSize="pageSize"
+        :pageSize="10"
         :total="totalCount"
         @change="changePage"
       />
