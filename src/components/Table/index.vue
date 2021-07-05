@@ -1,113 +1,136 @@
 <template>
-  <div
-    class="table-box"
-    :style="tableBoxC"
-  >
-    <table class="table">
-      <thead>
-        <tr>
-          <th
-            v-if="rowSelectionC"
-            :class="[{ 'checkbox-fix-all': rowSelectionC.fixed }]"
-          >
-            <span :class="[
-                { flex: true },
-                { 'checkbox-active': selectNum > 0 },
-                { 'checkbox-all': selectNum === countC },
-              ]">
-              <input
-                type="checkbox"
-                class="checkbox"
-                id="checkboxAll"
-                :checked="selectNum === countC"
-                @click="checkboxAllHandle"
-              />
-              <label for="checkboxAll"></label>
-            </span>
-          </th>
-          <th
-            v-for="item in columnsC"
-            :key="item.key"
-            :class="[{ 'td-fix': item.fixed }]"
-            :style="{ ...fixedC[item.key], width: item.width + 'px' }"
-          >
-            <div
-              class="flex"
-              @click="sorterHandle(item)"
+  <div>
+    <div
+      v-if="!dataSourceC || dataSourceC.length === 0"
+      class="table-box table-empty"
+      :style="tableBoxC"
+    >
+      <table class="table">
+        <thead>
+          <tr>
+            <th>
+              <span class="flex">
+                <input class="checkbox" type="checkbox" :disabled="true" />
+              </span>
+            </th>
+            <th v-for="item in columnsC" :key="item.key">
+              <div class="flex">
+                <slot
+                  :name="item.slots.title"
+                  v-if="item.slots && item.slots.title"
+                ></slot>
+
+                <span v-else>{{ item.title }}</span>
+                <span class="sorter" v-if="item.sorter">
+                  <CaretUpOutlined />
+                  <CaretDownOutlined />
+                </span>
+              </div>
+            </th>
+          </tr>
+        </thead>
+      </table>
+      <div class="empty">
+        <span>No Data</span>
+      </div>
+    </div>
+    <div class="table-box" :style="tableBoxC" v-else>
+      <table class="table">
+        <thead>
+          <tr>
+            <th
+              v-if="rowSelectionC"
+              :class="[{ 'checkbox-fix-all': rowSelectionC.fixed }]"
+            >
+              <span
+                :class="[
+                  { flex: true },
+                  { 'checkbox-active': selectNum > 0 },
+                  { 'checkbox-all': selectNum === countC },
+                ]"
+              >
+                <input
+                  type="checkbox"
+                  class="checkbox"
+                  id="checkboxAll"
+                  :checked="selectNum === countC"
+                  @click="checkboxAllHandle"
+                />
+                <label for="checkboxAll"></label>
+              </span>
+            </th>
+            <th
+              v-for="item in columnsC"
+              :key="item.key"
+              :class="[{ 'td-fix': item.fixed }]"
+              :style="{ ...fixedC[item.key], width: item.width + 'px' }"
+            >
+              <div class="flex" @click="sorterHandle(item)">
+                <slot
+                  :name="item.slots.title"
+                  v-if="item.slots && item.slots.title"
+                ></slot>
+
+                <span v-else>{{ item.title }}</span>
+
+                <span class="sorter" v-if="item.sorter">
+                  <CaretUpOutlined
+                    :class="[
+                      {
+                        'sorter-asc':
+                          sorterActive.key === item.key &&
+                          sorterActive.rule === 'asc',
+                      },
+                    ]"
+                  />
+                  <CaretDownOutlined
+                    :class="[
+                      {
+                        'sorter-desc':
+                          sorterActive.key === item.key &&
+                          sorterActive.rule === 'desc',
+                      },
+                    ]"
+                  />
+                </span>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(item, index) in dataSourceC" :key="item[rowKeyC]">
+            <td
+              v-if="rowSelectionC"
+              :class="[{ 'checkbox-fix': rowSelectionC.fixed }]"
+            >
+              <span>
+                <input
+                  type="checkbox"
+                  class="checkbox"
+                  :checked="checkboxArr[index]"
+                  :data-index="index"
+                  @click="checkboxHandle"
+                />
+              </span>
+            </td>
+            <td
+              v-for="it in columnsC"
+              :key="it.key"
+              :class="[{ 'td-fix': it.fixed }]"
+              :style="{ ...fixedC[it.key], width: item.width + 'px' }"
             >
               <slot
-                :name="item.slots.title"
-                v-if="item.slots && item.slots.title"
-              ></slot>
-
-              <span v-else>{{ item.title }}</span>
-
-              <span
-                class="sorter"
-                v-if="item.sorter"
+                v-if="it.slots && it.slots.customRender"
+                :name="it.slots.customRender"
+                :row="item"
               >
-                <CaretUpOutlined :class="[
-                    {
-                      'sorter-asc':
-                        sorterActive.key === item.key &&
-                        sorterActive.rule === 'asc',
-                    },
-                  ]" />
-                <CaretDownOutlined :class="[
-                    {
-                      'sorter-desc':
-                        sorterActive.key === item.key &&
-                        sorterActive.rule === 'desc',
-                    },
-                  ]" />
-              </span>
-            </div>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="(item, index) in dataSourceC"
-          :key="item[rowKeyC]"
-        >
-          <td
-            v-if="rowSelectionC"
-            :class="[{ 'checkbox-fix': rowSelectionC.fixed }]"
-          >
-            <span>
-              <input
-                type="checkbox"
-                class="checkbox"
-                :checked="checkboxArr[index]"
-                :data-index="index"
-                @click="checkboxHandle"
-              />
-            </span>
-          </td>
-          <td
-            v-for="it in columnsC"
-            :key="it.key"
-            :class="[{ 'td-fix': it.fixed }]"
-            :style="{ ...fixedC[it.key], width: item.width + 'px' }"
-          >
-            <slot
-              v-if="it.slots && it.slots.customRender"
-              :name="it.slots.customRender"
-              :row="item"
-            >
-            </slot>
-            <span v-else>{{ item[it.dataIndex] }}</span>
-          </td>
-        </tr>
-        <tr v-if="!dataSourceC || dataSourceC.length === 0">
-          <td :colspan="columnsC.length">
-            <div class="empty">
-              <span>No Data</span>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+              </slot>
+              <span v-else>{{ item[it.dataIndex] }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -365,7 +388,16 @@ export default defineComponent({
   width: 100%;
   margin: 20px auto;
 }
-
+.empty {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  color: #999;
+  border: 1px solid #dcdfe6;
+}
 .table {
   width: 100%;
   height: 100%;
@@ -418,16 +450,6 @@ export default defineComponent({
         }
       }
     }
-  }
-
-  .empty {
-    width: 100%;
-    height: 200px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    color: #999;
   }
 
   .checkbox {
@@ -527,6 +549,7 @@ export default defineComponent({
     font-size: 14px;
     margin-left: 10px;
     transform: translateY(-10%);
+    cursor: pointer;
     & > span:first-of-type {
       transform: translateY(30%);
     }
@@ -534,6 +557,16 @@ export default defineComponent({
     &-desc {
       color: @primary-color;
     }
+  }
+}
+.table-empty {
+  overflow: hidden;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  thead tr th,
+  tbody tr td {
+    width: auto;
   }
 }
 </style>
