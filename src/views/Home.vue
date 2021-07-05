@@ -5,10 +5,11 @@
         :columns="columns"
         :data-source="dataSource"
         rowKey="id"
-        :scroll="{ x: 700, y: 330 }"
+        :scroll="{ x: 900, y: 330 }"
         :row-selection="{
           fixed: true,
           onChange: selectChange,
+          selectedRowKeys: selectedRowKeysC,
         }"
         @sortChange="handleChange"
       >
@@ -70,20 +71,21 @@ const columns = [
     title: "结果",
     dataIndex: "summaryOfResults",
     key: "summaryOfResults",
-    width: 400,
+    width: 100,
   },
   {
     title: "完成时间",
     dataIndex: "endTime",
     key: "endTime",
-    width: 280,
+    width: 180,
     sorter: true,
+    fixed: "right",
   },
   {
     title: "操作",
     key: "action",
     slots: { customRender: "action" },
-    // fixed: "right",
+    fixed: "right",
   },
 ];
 
@@ -104,8 +106,6 @@ export default defineComponent({
     KTable,
   },
   setup() {
-    const nowPage = ref(0);
-
     const current = ref(1);
 
     const totalCount = ref(0);
@@ -120,6 +120,10 @@ export default defineComponent({
 
     const data: any[] = reactive([]);
 
+    const selectedRowKeysC: any[] = reactive([]);
+
+    const selectedRowKeysAllC = reactive(new Map());
+
     for (let i = 0; i < 50; i++) {
       data.push({ ...dataObj, id: i + 1, sn: "sn" + i });
     }
@@ -132,33 +136,39 @@ export default defineComponent({
 
     const changePage = (page: number) => {
       spinning.value = true;
-
-      nowPage.value = page;
-
       fetchData({ page });
     };
 
     const selectChange = (selectedRowKeys: string[] | number[]) => {
-      console.log("selectedRowKeys", selectedRowKeys);
+      console.log("selectedRowKeys>>>>>", selectedRowKeys);
+      selectedRowKeysAllC.set(current.value, [...selectedRowKeys]);
     };
 
     const handleChange = (sorter: any) => {
-      console.log("sorter2222222222222", sorter);
       const { key, rule } = sorter;
       spinning.value = true;
-
-      changePage(nowPage.value);
+      changePage(current.value);
     };
 
     const fetchData = (param: any) => {
       const { page } = param;
+
       dataSource.length = 0;
 
       const filter = data.slice(
         (page - 1) * pageSize.value,
         page * pageSize.value
       );
+
       dataSource.splice(0, 0, ...filter);
+
+      const selectedRowKeys = selectedRowKeysAllC.get(page);
+
+      selectedRowKeysC.length = 0;
+
+      if (selectedRowKeys) {
+        selectedRowKeysC.splice(0, 0, ...selectedRowKeysAllC.get(page));
+      }
 
       setTimeout(() => {
         spinning.value = false;
@@ -172,6 +182,7 @@ export default defineComponent({
       dataSource,
       pageSize,
       spinning,
+      selectedRowKeysC,
       changePage,
       selectChange,
       handleChange,
