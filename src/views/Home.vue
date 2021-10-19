@@ -5,7 +5,7 @@
         :columns="columns"
         :data-source="dataSource"
         rowKey="id"
-        :scroll="{ x: 1000, y: 800 }"
+        :scroll="{ x: 1000, y: 500 }"
         :row-selection="{
           fixed: true,
           onChange: selectChange,
@@ -112,7 +112,7 @@ export default defineComponent({
 
     const totalCount = ref(0);
 
-    const pageSize = ref(30);
+    const pageSize = ref(10);
 
     const spinning = ref(false);
 

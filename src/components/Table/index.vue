@@ -463,6 +463,7 @@ export default defineComponent({
         top: 0;
         z-index: 2;
         width: 120px;
+        box-sizing: border-box;
       }
     }
   }
