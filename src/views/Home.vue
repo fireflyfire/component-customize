@@ -5,12 +5,13 @@
         :columns="columns"
         :data-source="dataSource"
         rowKey="id"
-        :scroll="{ x: 900, y: 330 }"
+        :scroll="{ x: 1000, y: 800 }"
         :row-selection="{
           fixed: true,
           onChange: selectChange,
           selectedRowKeys: selectedRowKeysC,
         }"
+        :customRow="customRow"
         @sortChange="handleChange"
       >
         <template v-slot:sn="slotProps">
@@ -25,7 +26,7 @@
 
       <a-pagination
         v-model:current="current"
-        :pageSize="10"
+        :pageSize="pageSize"
         :total="totalCount"
         @change="changePage"
       />
@@ -53,6 +54,7 @@ const columns = [
     dataIndex: "sampleNo",
     key: "sampleNo",
     sorter: true,
+    fixed: "left",
   },
   {
     title: "项目简称",
@@ -110,7 +112,7 @@ export default defineComponent({
 
     const totalCount = ref(0);
 
-    const pageSize = ref(10);
+    const pageSize = ref(30);
 
     const spinning = ref(false);
 
@@ -123,6 +125,14 @@ export default defineComponent({
     const selectedRowKeysC: any[] = reactive([]);
 
     const selectedRowKeysAllC = reactive(new Map());
+
+    const currentRow: {
+      index: null | number;
+      value: any;
+    } = reactive({
+      index: null,
+      value: {},
+    });
 
     for (let i = 0; i < 50; i++) {
       data.push({ ...dataObj, id: i + 1, sn: "sn" + i });
@@ -140,13 +150,20 @@ export default defineComponent({
     };
 
     const selectChange = (selectedRowKeys: string[] | number[]) => {
-      console.log("selectedRowKeys>>>>>", selectedRowKeys);
       selectedRowKeysAllC.set(current.value, [...selectedRowKeys]);
+      selectedRowKeysC.splice(0, selectedRowKeysC.length, ...selectedRowKeys);
+      currentRow.value = {};
+      currentRow.index = null;
     };
 
     const handleChange = (sorter: any) => {
       const { key, rule } = sorter;
       spinning.value = true;
+      selectedRowKeysC.length = 0;
+      const newData = selectedRowKeysAllC.get(current.value);
+      if (newData) {
+        selectedRowKeysC.splice(0, 0, ...newData);
+      }
       changePage(current.value);
     };
 
@@ -174,6 +191,22 @@ export default defineComponent({
         spinning.value = false;
       }, 500);
     };
+    const customRow = (record: any, index: number) => {
+      return {
+        style: {
+          "background-color":
+            record.id === currentRow.value.id ? "#dcf4ff" : "",
+        },
+        onClick: () => {
+          console.log("record", record);
+          console.log("index", index);
+          currentRow.value = record;
+          currentRow.index = index;
+          selectedRowKeysC.length = 0;
+          selectedRowKeysAllC.delete(current.value);
+        },
+      };
+    };
 
     return {
       columns,
@@ -186,7 +219,14 @@ export default defineComponent({
       changePage,
       selectChange,
       handleChange,
+      customRow,
     };
   },
 });
 </script>
+<style lang="less" scoped>
+.home {
+  width: 1200px;
+  margin: auto;
+}
+</style>

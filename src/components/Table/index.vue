@@ -10,17 +10,10 @@
           <tr>
             <th>
               <span class="flex">
-                <input
-                  class="checkbox"
-                  type="checkbox"
-                  :disabled="true"
-                />
+                <input class="checkbox" type="checkbox" :disabled="true" />
               </span>
             </th>
-            <th
-              v-for="item in columnsC"
-              :key="item.key"
-            >
+            <th v-for="item in columnsC" :key="item.key">
               <div class="flex">
                 <slot
                   :name="item.slots.title"
@@ -28,10 +21,7 @@
                 ></slot>
 
                 <span v-else>{{ item.title }}</span>
-                <span
-                  class="sorter"
-                  v-if="item.sorter"
-                >
+                <span class="sorter" v-if="item.sorter">
                   <CaretUpOutlined />
                   <CaretDownOutlined />
                 </span>
@@ -44,23 +34,21 @@
         <span>No Data</span>
       </div>
     </div>
-    <div
-      class="table-box"
-      :style="tableBoxC"
-      v-else
-    >
-      <table class="table">
+    <div class="table-box" :style="tableBoxC" v-else>
+      <table class="table" :class="{ bordered: borderedC }">
         <thead>
           <tr>
             <th
               v-if="rowSelectionC"
               :class="[{ 'checkbox-fix-all': rowSelectionC.fixed }]"
             >
-              <span :class="[
+              <span
+                :class="[
                   { flex: true },
                   { 'checkbox-active': selectNum > 0 },
                   { 'checkbox-all': selectNum === countC },
-                ]">
+                ]"
+              >
                 <input
                   type="checkbox"
                   class="checkbox"
@@ -77,10 +65,7 @@
               :class="[{ 'td-fix': item.fixed }]"
               :style="{ ...fixedC[item.key], width: item.width + 'px' }"
             >
-              <div
-                class="flex"
-                @click="sorterHandle(item)"
-              >
+              <div class="flex" @click="sorterHandle(item)">
                 <slot
                   :name="item.slots.title"
                   v-if="item.slots && item.slots.title"
@@ -88,63 +73,79 @@
 
                 <span v-else>{{ item.title }}</span>
 
-                <span
-                  class="sorter"
-                  v-if="item.sorter"
-                >
-                  <CaretUpOutlined :class="[
+                <span class="sorter" v-if="item.sorter">
+                  <CaretUpOutlined
+                    :class="[
                       {
                         'sorter-asc':
                           sorterActive.key === item.key &&
                           sorterActive.rule === 'asc',
                       },
-                    ]" />
-                  <CaretDownOutlined :class="[
+                    ]"
+                  />
+                  <CaretDownOutlined
+                    :class="[
                       {
                         'sorter-desc':
                           sorterActive.key === item.key &&
                           sorterActive.rule === 'desc',
                       },
-                    ]" />
+                    ]"
+                  />
                 </span>
               </div>
             </th>
           </tr>
         </thead>
         <tbody>
-          <tr
+          <RowComponent
             v-for="(item, index) in dataSourceC"
             :key="item[rowKeyC]"
+            :customRow="customRowC"
+            :record="item"
+            :index="index"
           >
-            <td
-              v-if="rowSelectionC"
-              :class="[{ 'checkbox-fix': rowSelectionC.fixed }]"
-            >
-              <span>
-                <input
-                  type="checkbox"
-                  class="checkbox"
-                  :checked="checkboxArr[index]"
-                  :data-index="index"
-                  @click="checkboxHandle"
-                />
-              </span>
-            </td>
-            <td
-              v-for="it in columnsC"
-              :key="it.key"
-              :class="[{ 'td-fix': it.fixed }]"
-              :style="{ ...fixedC[it.key], width: item.width + 'px' }"
-            >
-              <slot
-                v-if="it.slots && it.slots.customRender"
-                :name="it.slots.customRender"
-                :row="item"
+            <template v-slot:default="slotProps">
+              <td
+                v-if="rowSelectionC"
+                :class="[
+                  {
+                    'checkbox-fix': rowSelectionC.fixed,
+                    checked: checkboxArr[index],
+                  },
+                ]"
+                :style="slotProps.style"
               >
-              </slot>
-              <span v-else>{{ item[it.dataIndex] }}</span>
-            </td>
-          </tr>
+                <span>
+                  <input
+                    type="checkbox"
+                    class="checkbox"
+                    :checked="checkboxArr[index]"
+                    :data-index="index"
+                    @click.stop="checkboxHandle"
+                  />
+                </span>
+              </td>
+              <td
+                v-for="it in columnsC"
+                :key="it.key"
+                :class="[{ 'td-fix': it.fixed }]"
+                :style="{
+                  ...fixedC[it.key],
+                  width: item.width + 'px',
+                  ...slotProps.style,
+                }"
+              >
+                <slot
+                  v-if="it.slots && it.slots.customRender"
+                  :name="it.slots.customRender"
+                  :row="item"
+                >
+                </slot>
+                <span v-else>{{ item[it.dataIndex] }}</span>
+              </td>
+            </template>
+          </RowComponent>
         </tbody>
       </table>
     </div>
@@ -163,8 +164,10 @@ import {
 } from "vue";
 import { CaretUpOutlined, CaretDownOutlined } from "@ant-design/icons-vue";
 import { RowSelectionI, ColumnPropsI } from "./type/index";
+import RowComponent from "./rowComponent.vue";
 
 export default defineComponent({
+  name: "KTable",
   props: {
     dataSource: {
       type: Array,
@@ -188,10 +191,21 @@ export default defineComponent({
       type: Object as PropType<RowSelectionI>,
       default: undefined,
     },
+    bordered: {
+      type: Boolean,
+      default: false,
+    },
+    customRow: {
+      type: Function,
+      default: () => () => {
+        return {};
+      },
+    },
   },
   components: {
     CaretUpOutlined,
     CaretDownOutlined,
+    RowComponent,
   },
   setup(props, ctx) {
     const selectNum = ref(0);
@@ -230,8 +244,8 @@ export default defineComponent({
     const tableBoxC = computed(() => {
       const { x, y } = props.scroll;
       let res = "";
-      x && (res += `max-width: ${props.scroll.x}px;overflow-x:scroll;`);
-      y && (res += `max-height: ${props.scroll.y}px;overflow-y:scroll;`);
+      x && (res += `max-width: ${props.scroll.x}px;overflow-x:auto;`);
+      y && (res += `max-height: ${props.scroll.y}px;overflow-y:auto;`);
 
       return res;
     });
@@ -271,31 +285,35 @@ export default defineComponent({
       return result;
     });
 
-    watch(props.dataSource, (newVal, oldVal) => {
-      selectNum.value = 0;
-
-      selectedRowKeys.length = 0;
-
-      checkboxArr.length = 0;
-
-      const rowSelection = props.rowSelection;
-
-      if (rowSelection && rowSelection.selectedRowKeys) {
-        selectedRowKeys.splice(0, 0, ...rowSelection.selectedRowKeys);
-      }
-
-      newVal?.forEach((item: any) => {
-        const index =
-          rowSelection &&
-          rowSelection.selectedRowKeys?.indexOf(item[rowKeyC.value]);
-        const checked = index !== undefined && index !== -1;
-
-        if (checked) {
-          selectNum.value++;
-        }
-        checkboxArr.push(checked);
-      });
+    const borderedC = computed(() => {
+      return props.bordered;
     });
+
+    const customRowC = computed(() => {
+      return props.customRow;
+    });
+
+    watch(
+      rowSelectionC,
+      (newVal) => {
+        selectNum.value = 0;
+        selectedRowKeys.length = 0;
+        checkboxArr.length = 0;
+        if (newVal?.selectedRowKeys) {
+          selectedRowKeys.splice(0, 0, ...newVal.selectedRowKeys);
+          dataSourceC.value.forEach((item: any) => {
+            const index = newVal.selectedRowKeys?.indexOf(item[rowKeyC.value]);
+            const checked = index !== undefined && index !== -1;
+
+            if (checked) {
+              selectNum.value++;
+            }
+            checkboxArr.push(checked);
+          });
+        }
+      },
+      { immediate: true, deep: true }
+    );
 
     const checkboxHandle = (e: any) => {
       const { checked } = e.target as HTMLInputElement;
@@ -380,8 +398,10 @@ export default defineComponent({
       rowSelectionC,
       tableBoxC,
       fixedC,
+      borderedC,
       checkboxArr,
       sorterActive,
+      customRowC,
       checkboxHandle,
       checkboxAllHandle,
       sorterHandle,
@@ -404,6 +424,7 @@ export default defineComponent({
 .table-box {
   width: 100%;
   margin: 20px auto;
+  border: 1px solid #dcdfe6;
 }
 .empty {
   width: 100%;
@@ -413,12 +434,10 @@ export default defineComponent({
   align-items: center;
   flex-direction: column;
   color: #999;
-  border: 1px solid #dcdfe6;
 }
 .table {
   width: 100%;
   height: 100%;
-  border: 1px solid #dcdfe6;
   background-color: #fff;
   color: rgba(0, 0, 0, 0.85);
   font-size: 14px;
@@ -469,6 +488,13 @@ export default defineComponent({
     }
   }
 
+  &.bordered {
+    thead > tr > td,
+    tbody > tr > td {
+      border-right: 1px solid #f0f0f0;
+    }
+  }
+
   .checkbox {
     width: 20px;
     height: 20px;
@@ -516,6 +542,13 @@ export default defineComponent({
     position: sticky;
   }
 
+  .checked {
+    background-color: #ecf8fd;
+    & ~ td {
+      background-color: #ecf8fd;
+    }
+  }
+
   .checkbox-fix,
   .checkbox-fix-all,
   .td-fix {
@@ -528,7 +561,6 @@ export default defineComponent({
       position: absolute;
       top: 0;
       left: 0;
-      transform: scaleX(0.5);
     }
     &::after {
       content: "";
@@ -538,22 +570,25 @@ export default defineComponent({
       background: #f0f0f0;
       position: absolute;
       top: 0;
-      right: -1px;
-      transform: scaleX(0.5);
+      right: 0;
     }
 
     &:first-child,
     &:last-child {
       &::before {
-        content: "";
-        display: inline-block;
-        width: 2px;
-        height: 100%;
-        background: #f0f0f0;
-        position: absolute;
-        top: 0;
-        left: 0;
+        display: none;
       }
+      &::after {
+        display: none;
+      }
+    }
+  }
+
+  &.bordered {
+    .checkbox-fix,
+    .checkbox-fix-all,
+    .td-fix {
+      border-right: none;
     }
   }
 
